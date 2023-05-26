@@ -1,4 +1,0 @@
-compartment_id   = "ocid1.compartment.oc1..aaaaaaaahubt7j2qqc6fa6hrxcu7oqwzvxponeuc7y2viignavmn6lrer42q"
-bucket_namespace = "axvx3egocaah"
-bucket_name      = "terraform-state"
-state_folder     = "vps-tfstate"

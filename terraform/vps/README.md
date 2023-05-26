@@ -4,13 +4,17 @@ This Terraform plan brings up a VPS under OCI. The example configuration creates
 
 By default, it uses 3 ARM cores, 16 GB of RAM, and 180 GB of block storage.
 
+## prerequisites
+
+- Create an account on the OCI free tier. The recommended region is `us-ashburn-1`. If you choose a different region, you will need to modify the Terraform vars accordingly to adjust for your availability domain and image IDs.
+- Create an Object Storage bucket for your Terraform state. Upload an empty `terraform.tfstate` file to it.
+- Create a [Pre-Authenticated request](https://docs.oracle.com/en-us/iaas/Content/Object/Tasks/usingpreauthenticatedrequests.htm) for your tfstate file. The PAR requires read and write access. Paste this PAR into your `backend.tfvars` file (copying the template from `backend.tfvars.example` if needed)
+
 ## initializing
 
 This plan uses OCI object storage to manage the Terraform state.
 
-Run the plan in `backend-init` folder if you haven't already to create the state bucket, and then create and update the `backend.tfvars` with your pre-authenticated request URL.
-
-Then, initialize:
+Make sure your `backend.tfvars` file contains your generated PAR, then initialize:
 
 ```shell
 terraform init -backend-config=backend.tfvars
@@ -27,12 +31,7 @@ terraform apply
 
 ## upon initial creation
 
-You will need to set up your domain's DNS entries to point to your new server's IP address.
-You can obtain the IP address of your server with `terraform apply -refresh-only`.
-
-### block storange configuration
-
-If you configured block storage, you'll need to SSH into the instance and perform some initial commands (or use the Ansible script to do it for you):
+You'll need to SSH into the instance and perform some initial commands:
 
 ```shell
 # format the block volume with ext4 (WARNING: will wipe its data)
