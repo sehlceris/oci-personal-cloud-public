@@ -1,0 +1,37 @@
+# Authentication
+tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaailzcpi4feitud45w5bdqqospqzoirz5ih4cm42qnpssm3gsd3maa"
+user_ocid    = "ocid1.user.oc1..aaaaaaaa6v5uu2oykfsp6xzza3ifz4cb4vciexquviyeyilrz2r2zhylixga"
+# fingerprint      = "a5:ed:72:be:e2:45:0d:d8:5e:18:0a:7b:4b:80:c3:52" # theory's fingerprint
+fingerprint = "91:06:24:05:f7:e1:ce:61:11:5b:67:06:52:2f:13:34" # cannondale's fingerprint
+
+private_key_path = "/home/adam/.ssh/id_rsa.private.pem"
+
+# User-readable name of this deployment. 10 character maximum. Must be unique because it is used to generate DNS labels. Must be compatible with Oracle DNS labels: VCN and subnet labels: Max 10 (actually 15, but 5 are reserved for this script) alphanumeric characters and must start with a letter. Notice that hyphens and underscores are NOT allowed. The value cannot be changed later.
+name_of_deployment = "sandbox"
+
+# Region and Compartment
+region           = "us-ashburn-1"
+ad_number        = 2
+compartment_ocid = "ocid1.compartment.oc1..aaaaaaaanr5kh7i5janlpkv7fln4w326o3nkbekxg4tjdnfaw4kc7ceiwaza"
+
+# Network
+vcn_cidr_block    = "10.0.0.0/16"
+subnet_cidr_block = "10.0.0.0/24"
+
+# Block Volume
+volume_size_in_gbs = 20
+
+# Compute: X86
+instance_shape = "VM.Standard.E2.1.Micro"
+memory_in_gbs  = 1
+ocpus          = 1
+image_id       = "ocid1.image.oc1.us-sanjose-1.aaaaaaaaaa76zjvo75re3ewqdbhu37bswnasuagb6gnb7bst4ymvpul25oca"
+
+# Compute: ARM
+# instance_shape = "VM.Standard.A1.Flex"
+# memory_in_gbs  = 4
+# ocpus          = 2
+# image_id       = "ocid1.image.oc1.us-sanjose-1.aaaaaaaaqivbg7xyskphzkyefaaaejl7bixymjrkj7j73wjuvfpyjbo5yhkq"
+
+ssh_authorized_keys = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCr960/lFUsWxUA83JX8R975QATuBF1YJuk/nuqR3gJR0j2ccI2APEiLoScirKLCQn7FK0SUo9OF1TPhfY+qQKa3/rOg1r0IgJ8YN3wKTLPjrZ3oiQp0h4b9EVLp3arF1oy7EdjL+2kN3Sy9bpcUDhh96gWpSmF592fFv1WpHYf0miAI0f8SeR9oDimyy+lADdI/7BTiiteXLTkZVvac2Ix6cGUQZJ9OspfZ9s0qSBsxWSjW6zsC45jXlPUnUAqv2f5t0PdP7LJXRpnaZPn6csMxtgxqkkGvRu5fJW6W4yRvX/M+O6hYGBWooYiraBjOmYPPXNwlxVncCkdHOkjC6N1eJtr5zXWNqNHuDGU6PhrAFa65IyRoTG6wUxd1aQMKiX/GIrp9UXeDnYknjjxHL39y6SPq5Y1omXfOvcP0n7yOuR6xVKtwWzEp3zQLczptMyL/qkoal1YpY8eylwLnNfO3hvQlua1bAN88zcOOkeUB1/px2f9q6JFgtciAp7pzjk= adam@theory.local\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDU7SGGiOkXE5qu4jKZKpZlY3rg3IwCCjBQbnfIWVxapRZf/XBr1lKiNP17wJpnsT2m0MJB0gdtUmwUtgiH2WsKW+mF/THzSZVnFwNgTvARJHzDomUOuIi+zxA1Q0hqResVylxHqo19WaxBuXBOIS2soL8YW+2KcuzvChQGlKH88eJeIGC4xb4B8wTiAJDfkUen5Fgs3VqlN+8vwk5N+ouUqCYM8ycbWgAg3NBCLPC53UQwJQK2dmBQigb4d8Kf5knOYZcEgb7ADmBqS4tLDeWyVtdEFRJYBg49bwvE0k/++gp28ODMrNNizWRCiP5cO+iiq9E8oQVRRtYW8PIurj7vYZn4n4QUz6bFH+17mapeNbwKVc7Djt5zYC+djweWwAVkAarC9ksoIWr8g//fDAhyT0/93+OcxolDnp8qJuvkPp7GLGyV4CeVmb+ZKYrCNFoXzGzQFPHe6Ln0seLaTbaXLL4hIX0q2Du62U9IhaPeigXf4rv1fW89n8slGKyg1q8= adam@cannondale"
+

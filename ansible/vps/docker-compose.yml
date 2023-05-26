@@ -1,0 +1,84 @@
+version: '3'
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:v2.5
+    restart: always
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "letsencrypt:/letsencrypt"
+    networks:
+      - services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`${TRAEFIK_SUBDOMAIN}.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.tls.certresolver=myresolver"
+      - "traefik.http.routers.api.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASIC_AUTH_USER}:${TRAEFIK_BASIC_AUTH_PASSWORD_HASH}"
+    ports:
+      - "443:443"
+      - "80:80"
+
+  postgres:
+    container_name: postgres
+    image: postgres:13-alpine
+    restart: always
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+    networks:
+      - services
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: nextcloud
+
+  nextcloud:
+    container_name: nextcloud
+    image: nextcloud:latest
+    restart: always
+    volumes:
+      - "nextcloud_data:/var/www/html"
+    networks:
+      - services
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      NEXTCLOUD_ADMIN_USER: admin
+      NEXTCLOUD_ADMIN_PASSWORD: "${NEXTCLOUD_PASSWORD}"
+      NEXTCLOUD_TRUSTED_DOMAINS: "${NEXTCLOUD_SUBDOMAIN}.${ROOT_DOMAIN}"
+      TRUSTED_PROXIES: "traefik"
+      APACHE_DISABLE_REWRITE_IP: 1
+      OVERWRITEPROTOCOL: "https"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_SUBDOMAIN}.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.tls=true"
+      - "traefik.http.routers.nextcloud.tls.certresolver=myresolver"
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud_redirectregex"
+      - "traefik.http.middlewares.nextcloud_redirectregex.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nextcloud_redirectregex.redirectregex.regex=https://(.*)/.well-known/(?:card|cal)dav"
+      - "traefik.http.middlewares.nextcloud_redirectregex.redirectregex.replacement=https://$${1}/remote.php/dav"
+
+volumes:
+  letsencrypt:
+  postgres_data:
+  nextcloud_data:
+
+
+networks:
+  services:
+    external: true

@@ -1,0 +1,159 @@
+---
+- name: Provision server
+  hosts: vps_servers
+  become: true
+
+  vars:
+    docker_users:
+      - ubuntu
+    docker_daemon_config:
+      data-root: "{{ docker_data_root }}"
+
+  pre_tasks:
+    - name: Install SSH authorized keys
+      ansible.posix.authorized_key:
+        user: "{{ user }}"
+        state: present
+        key: "{{ lookup('file', item) }}"
+      with_fileglob:
+        - "ssh-keys/*"
+
+    - name: Include vars from vars.yml
+      ansible.builtin.include_vars: vars.yml
+
+    - name: Update APT package cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: true
+        autoclean: true
+
+    - name: Check if block storage disk has ext4 filesystem
+      ansible.builtin.command: lsblk -n -o FSTYPE /dev/oracleoci/oraclevdb
+      register: filesystem_check
+      ignore_errors: true
+      changed_when: filesystem_check.stdout != 'ext4' or filesystem_check.failed
+
+    - name: Format disk with ext4 filesystem
+      ansible.builtin.command: mkfs.ext4 /dev/oracleoci/oraclevdb
+      when: filesystem_check.stdout != 'ext4' or filesystem_check.failed
+      changed_when: filesystem_check.stdout != 'ext4' or filesystem_check.failed
+
+    - name: Ensure storage directory exists
+      ansible.builtin.file:
+        path: "/mnt/storage"
+        state: directory
+        mode: "0755"
+
+    - name: Append line to /etc/fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        line: "/dev/oracleoci/oraclevdb /mnt/storage ext4 defaults,nofail 0 2"
+        state: present
+
+    - name: Mount block storage
+      ansible.posix.mount:
+        fstype: auto
+        src: "/dev/oracleoci/oraclevdb"
+        path: "/mnt/storage"
+        state: mounted
+
+    - name: Ensure docker data root directory exists
+      ansible.builtin.file:
+        path: "/mnt/storage/docker"
+        state: directory
+        mode: "0700"
+
+    - name: Ensure user script directory exists
+      ansible.builtin.file:
+        path: "/home/{{ user }}/scripts"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0700"
+
+    - name: Copy maintenance script to the server
+      ansible.builtin.copy:
+        src: "maintenance.sh"
+        dest: "/home/{{ user }}/scripts/maintenance.sh"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0744"
+
+    - name: Create cron job for the maintenance script
+      ansible.builtin.cron:
+        name: "Run maintenance script"
+        user: "{{ user }}"
+        minute: "3"
+        hour: "3"
+        job: "/home/{{ user }}/scripts/maintenance.sh"
+
+  roles:
+    - role: geerlingguy.docker
+    - role: geerlingguy.pip
+
+  tasks:
+    - name: Ensure necessary Python libraries are installed
+      ansible.builtin.pip:
+        name:
+          - passlib
+
+    - name: Generate escaped htpasswd hash for Traefik
+      ansible.builtin.set_fact:
+        traefik_basic_auth_password_hash: "{{ traefik_basic_auth_password | password_hash('bcrypt', rounds=13) | b64encode }} | regex_replace('\\$', '$$') }}"
+
+    - name: Install Docker Compose
+      ansible.builtin.pip:
+        name: docker-compose
+        state: present
+
+    - name: Add the user to the docker group
+      ansible.builtin.user:
+        name: "{{ user }}"
+        groups: docker
+        append: true
+
+    - name: Create Docker network "services"
+      community.docker.docker_network:
+        name: services
+        state: present
+
+    - name: Create a directory for docker-compose file
+      ansible.builtin.file:
+        path: "/home/ubuntu/docker-services"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Create .env file
+      ansible.builtin.copy:
+        dest: "/home/ubuntu/docker-services/.env"
+        content: |
+          EMAIL={{ email }}
+          ROOT_DOMAIN={{ root_domain }}
+          NEXTCLOUD_SUBDOMAIN={{ nextcloud_subdomain }}
+          TRAEFIK_SUBDOMAIN={{ traefik_subdomain }}
+          POSTGRES_PASSWORD={{ postgres_password }}
+          NEXTCLOUD_PASSWORD={{ nextcloud_password }}
+          TRAEFIK_BASIC_AUTH_USER={{ traefik_basic_auth_user }}
+          TRAEFIK_BASIC_AUTH_PASSWORD_HASH={{ traefik_basic_auth_password_hash }}
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0600"
+
+    - name: Copy docker-compose.yml file
+      ansible.builtin.copy:
+        src: ./docker-compose.yml
+        dest: "/home/ubuntu/docker-services/docker-compose.yml"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0644"
+
+    - name: Start Docker services
+      community.docker.docker_compose:
+        project_src: "/home/ubuntu/docker-services"
+        state: present

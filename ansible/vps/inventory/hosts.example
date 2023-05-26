@@ -1,0 +1,2 @@
+[vps_servers]
+<your_IP_address> ansible_user=ubuntu

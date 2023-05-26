@@ -1,0 +1,19 @@
+version: '3'
+services:
+  website:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.example.rule=Host(`about.example.com`)"
+      - "traefik.http.routers.example.entrypoints=websecure"
+      - "traefik.http.routers.example.tls.certresolver=myresolver"
+
+networks:
+  services:
+    external: true
