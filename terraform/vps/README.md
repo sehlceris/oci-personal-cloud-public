@@ -27,7 +27,12 @@ terraform apply
 
 ## upon initial creation
 
-You'll need to SSH into the instance and perform some initial commands:
+You will need to set up your domain's DNS entries to point to your new server's IP address.
+You can obtain the IP address of your server with `terraform apply -refresh-only`.
+
+### block storange configuration
+
+If you configured block storage, you'll need to SSH into the instance and perform some initial commands (or use the Ansible script to do it for you):
 
 ```shell
 # format the block volume with ext4 (WARNING: will wipe its data)
